@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from './AppError';
 import { logger } from '../logger';
 import { env } from '../../config';
+import { ApiResponse } from '../utils/HttpResponse';
 
 export function errorHandler(
   err: Error,
@@ -16,10 +17,13 @@ export function errorHandler(
       method: req.method,
     });
 
-    res.status(err.statusCode).json({
-      status: 'error',
+    const response: ApiResponse = {
+      code: 'ERROR',
       message: err.message,
-    });
+      serverTime: new Date().toISOString(),
+    };
+
+    res.status(err.statusCode).json(response);
     return;
   }
 
@@ -35,15 +39,21 @@ export function errorHandler(
     ? 'Internal server error' 
     : err.message;
 
-  res.status(500).json({
-    status: 'error',
+  const response: ApiResponse = {
+    code: 'ERROR',
     message,
-  });
+    serverTime: new Date().toISOString(),
+  };
+
+  res.status(500).json(response);
 }
 
 export function notFoundHandler(req: Request, res: Response): void {
-  res.status(404).json({
-    status: 'error',
+  const response: ApiResponse = {
+    code: 'NOT_FOUND',
     message: `Route ${req.method} ${req.path} not found`,
-  });
+    serverTime: new Date().toISOString(),
+  };
+
+  res.status(404).json(response);
 }

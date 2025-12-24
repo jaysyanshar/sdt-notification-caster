@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PlaceholderService } from './placeholder.service';
+import { HttpResponse } from '../../shared/utils/HttpResponse';
 
 export class PlaceholderController {
   private placeholderService: PlaceholderService;
@@ -11,7 +12,7 @@ export class PlaceholderController {
   getHelloWorld = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const message = await this.placeholderService.getHelloWorld();
-      res.status(200).send(message);
+      HttpResponse.success(res, message, 'Hello World retrieved successfully', 'SUCCESS');
     } catch (error) {
       next(error);
     }
