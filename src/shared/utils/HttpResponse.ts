@@ -21,6 +21,10 @@ export class HttpResponse {
     };
   }
 
+  static send<T>(res: Response, statusCode: number, message: string, code: string, data?: T): Response {
+    return res.status(statusCode).json(this.buildResponse(code, message, data));
+  }
+
   static success<T>(res: Response, data?: T, message: string = 'Success', code: string = 'SUCCESS'): Response {
     return res.status(200).json(this.buildResponse(code, message, data));
   }
