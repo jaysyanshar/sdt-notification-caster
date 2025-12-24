@@ -33,6 +33,10 @@ src/
       placeholder.routes.ts      # Route definitions
       placeholder.controller.ts  # Request handlers
       placeholder.service.ts     # Business logic
+tests/
+  unit/                 # Unit tests for individual components
+    modules/            # Module-level tests
+    shared/             # Shared utilities tests
 ```
 
 ## Prerequisites
@@ -74,14 +78,41 @@ npm run build
 npm start
 ```
 
+## Testing
+
+### Run all tests
+```bash
+npm test
+```
+
+### Run tests in watch mode
+```bash
+npm run test:watch
+```
+
+### Run tests with coverage
+```bash
+npm run test:coverage
+```
+
+The project includes unit tests for:
+- **Controllers**: Request handling and error propagation
+- **Services**: Business logic and data processing
+- **Utilities**: HTTP response formatting and helper functions
+
 ## API Endpoints
 
 ### GET /api/placeholder/hello-world
 Returns a "Hello World" message with HTTP 200 status.
 
 **Response:**
-```
-Hello World
+```json
+{
+  "code": "SUCCESS",
+  "message": "Hello World retrieved successfully",
+  "data": "Hello World",
+  "serverTime": "2025-12-24T09:28:15.119Z"
+}
 ```
 
 ## Error Handling
