@@ -21,6 +21,14 @@ export class HttpResponse {
     };
   }
 
+  /**
+   * Send a custom HTTP response with specified status code
+   * @param res - Express response object
+   * @param statusCode - HTTP status code (e.g., 200, 404, 500)
+   * @param message - Human-readable message describing the response
+   * @param code - Machine-readable code for the response (e.g., 'SUCCESS', 'ERROR')
+   * @param data - Optional data to include in the response
+   */
   static send<T>(res: Response, statusCode: number, message: string, code: string, data?: T): Response {
     return res.status(statusCode).json(this.buildResponse(code, message, data));
   }
