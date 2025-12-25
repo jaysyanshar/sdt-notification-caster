@@ -17,7 +17,7 @@ export function isValidIanaZone(zone: string): boolean {
 
   // Reject pure numeric offset formats like +07:00, -0300, +02
   // while still allowing valid IANA identifiers such as "UTC" or "GMT".
-  if (/^[+-]\d{2}(?::?\d{2})?$/.test(zone)) return false;
+  if (/^[+-]\d{2}(?::?[0-5]\d)?$/.test(zone)) return false;
 
   // Use Luxon to verify this is a known valid zone.
   if (!DateTime.isValidZone(zone)) return false;

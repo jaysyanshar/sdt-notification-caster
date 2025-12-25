@@ -29,8 +29,15 @@ export class JobWorker {
       logger.info(`Job ${job.id} sent for user ${job.userId}`);
     } catch (error: any) {
       const reason = error?.message || 'Unknown error';
-      await this.jobService.markRetry(job.id, job.attempts, reason);
-      logger.warn(`Job ${job.id} failed. Scheduled for retry.`, { reason });
+      try {
+        await this.jobService.markRetry(job.id, job.attempts, reason);
+        logger.warn(`Job ${job.id} failed. Scheduled for retry.`, { reason });
+      } catch (retryError: any) {
+        logger.error(`Job ${job.id} failed and could not be marked for retry.`, {
+          originalError: reason,
+          retryError: retryError?.message,
+        });
+      }
     }
   }
 
