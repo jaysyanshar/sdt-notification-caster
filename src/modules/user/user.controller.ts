@@ -3,7 +3,7 @@ import { ValidationError } from '../../shared/errors/AppError';
 import { HttpResponse } from '../../shared/utils/HttpResponse';
 import { UserService } from './user.service';
 
-const uuidRegex = /^[0-9a-fA-F-]{36}$/;
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export class UserController {
   constructor(private userService: UserService = new UserService()) {}
