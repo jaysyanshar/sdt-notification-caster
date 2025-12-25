@@ -14,7 +14,7 @@ describe('calculateNextBirthdayUtc', () => {
   });
 
   it('schedules next year if after 09:00 local time on birthday', () => {
-    const now = DateTime.fromISO('2024-05-02T15:00:00Z'); // 11:00 in New York
+    const now = DateTime.fromISO('2024-05-02T15:00:00Z'); // 11:00 AM in New York (after 09:00 local time)
     const next = calculateNextBirthdayUtc('1990-05-02', 'America/New_York', now);
     expect(next.year).toBe(2025);
   });

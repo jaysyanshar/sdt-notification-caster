@@ -1,4 +1,4 @@
-import { env, validateEnv } from './config';
+import { validateEnv } from './config';
 import { logger } from './shared/logger';
 import { JobWorker } from './worker/jobWorker';
 
@@ -6,9 +6,10 @@ validateEnv();
 
 const worker = new JobWorker();
 
+logger.info('Starting worker.');
+
 worker
   .start()
-  .then(() => logger.info('Worker started'))
   .catch((err) => {
     logger.error('Worker failed to start', err);
     process.exit(1);

@@ -25,26 +25,29 @@ export class MessageJobService {
   }
 
   async rescheduleBirthday(user: User, now: DateTime = DateTime.utc()): Promise<MessageJob> {
-    return this.prisma.$transaction(async (tx) => {
-      await tx.messageJob.deleteMany({
-        where: {
-          userId: user.id,
-          type: MessageType.BIRTHDAY,
-          status: { in: [MessageStatus.PENDING, MessageStatus.RETRY] },
-          scheduledAtUtc: { gt: new Date() },
-        },
-      });
+    await this.prisma.messageJob.deleteMany({
+      where: {
+        userId: user.id,
+        type: MessageType.BIRTHDAY,
+        status: { in: [MessageStatus.PENDING, MessageStatus.RETRY] },
+        scheduledAtUtc: { gt: new Date() },
+      },
+    });
 
-      const scheduledAt = calculateNextBirthdayUtc(user.birthDate.toISOString().slice(0, 10), user.timezone, now).toJSDate();
-      return tx.messageJob.create({
-        data: {
-          userId: user.id,
-          type: MessageType.BIRTHDAY,
-          scheduledAtUtc: scheduledAt,
-          status: MessageStatus.PENDING,
-          attempts: 0,
-        },
-      });
+    const scheduledAt = calculateNextBirthdayUtc(
+      user.birthDate.toISOString().slice(0, 10),
+      user.timezone,
+      now,
+    ).toJSDate();
+
+    return this.prisma.messageJob.create({
+      data: {
+        userId: user.id,
+        type: MessageType.BIRTHDAY,
+        scheduledAtUtc: scheduledAt,
+        status: MessageStatus.PENDING,
+        attempts: 0,
+      },
     });
   }
 

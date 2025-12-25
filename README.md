@@ -90,7 +90,7 @@ curl -X DELETE http://localhost:3000/api/user/<userId>
 - If the current day/time is already past 09:00 locally, the next year is scheduled.
 - **Feb 29 birthdays** are delivered on Feb 28 in non-leap years.
 - Each job is unique per user/type/scheduledAtUtc (database constraint) to prevent duplicates.
-- The worker polls for due jobs, claims them with `FOR UPDATE SKIP LOCKED`, and sends email payloads as `{ "email": "<user email>", "message": "Hey, <first> <last> it's your birthday" }` with an `Idempotency-Key` header equal to the job id.
+- The worker polls for due jobs, claims them with `FOR UPDATE SKIP LOCKED`, and sends email payloads as `{ "email": "<user email>", "message": "Hey, <first> <last>, it's your birthday" }` with an `Idempotency-Key` header equal to the job id.
 - Failures/timeouts set the job to `RETRY` with exponential backoff + jitter (capped at 1 hour) stored in `nextAttemptAtUtc`.
 - After a successful send, the next year's birthday job is scheduled automatically.
 

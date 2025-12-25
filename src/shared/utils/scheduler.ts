@@ -14,7 +14,13 @@ const TARGET_HOUR = 9;
 
 export function isValidIanaZone(zone: string): boolean {
   if (!zone || typeof zone !== 'string') return false;
-  if (!zone.includes('/')) return false; // avoid raw offsets like +07:00
+
+  // Reject pure numeric offset formats like +07:00, -0300, +02
+  // while still allowing valid IANA identifiers such as "UTC" or "GMT".
+  if (/^[+-]\d{2}(?::?\d{2})?$/.test(zone)) return false;
+
+  // Use Luxon to verify this is a known valid zone.
+  if (!DateTime.isValidZone(zone)) return false;
   const dt = DateTime.now().setZone(zone);
   return dt.isValid;
 }
@@ -22,7 +28,14 @@ export function isValidIanaZone(zone: string): boolean {
 export function parseBirthDate(value: string): DateTime {
   const dt = DateTime.fromISO(value, { zone: 'utc' });
   if (!dt.isValid || value.length !== 10) {
-    throw new Error('birthDate must be an ISO date string (YYYY-MM-DD)');
+     throw new Error('birthDate must be an ISO date string (YYYY-MM-DD)');
+  }
+
+  // Enforce a reasonable birthdate range: in the past, but not more than 150 years ago
+  const now = DateTime.utc().startOf('day');
+  const earliest = now.minus({ years: 150 });
+  if (dt >= now || dt < earliest) {
+     throw new Error('birthDate must be in the past and not more than 150 years ago');
   }
   return dt;
 }
@@ -65,14 +78,14 @@ export function calculateNextBirthdayUtc(
 }
 
 export function buildBirthdayMessage(user: UserLike): string {
-  return `Hey, ${user.firstName} ${user.lastName} it's your birthday`;
+  return `Hey, ${user.firstName} ${user.lastName}, it's your birthday`;
 }
 
 export function calculateNextAttempt(attempts: number): Date {
   const baseDelayMs = 1000 * Math.pow(2, attempts); // exponential backoff
   const cappedBase = Math.min(baseDelayMs, 60 * 60 * 1000);
   const jitter = Math.random() * 0.3 * cappedBase;
-  const delay = Math.min(cappedBase + jitter, 60 * 60 * 1000);
+  const delay = cappedBase + jitter;
   return new Date(Date.now() + delay);
 }
 
