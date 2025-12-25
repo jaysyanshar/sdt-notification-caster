@@ -19,8 +19,12 @@ export class JobWorker {
 
   async processJob(job: MessageJobWithUser): Promise<void> {
     const message = this.jobService.buildMessage(job);
+    let emailSent = false;
+    
     try {
       await this.emailService.send(job, message);
+      emailSent = true;
+      
       await this.prisma.$transaction(async (tx) => {
         const svc = new MessageJobService(tx);
         await svc.markSent(job.id);
@@ -29,13 +33,18 @@ export class JobWorker {
       logger.info(`Job ${job.id} sent for user ${job.userId}`);
     } catch (error: any) {
       const reason = error?.message || 'Unknown error';
-      try {
+      
+      if (!emailSent) {
+        // Email delivery failed, safe to retry
         await this.jobService.markRetry(job.id, job.attempts, reason);
         logger.warn(`Job ${job.id} failed. Scheduled for retry.`, { reason });
-      } catch (retryError: any) {
-        logger.error(`Job ${job.id} failed and could not be marked for retry.`, {
-          originalError: reason,
-          retryError: retryError?.message,
+      } else {
+        // Email was sent but post-send operations failed
+        // DO NOT retry as it would send duplicate email
+        logger.error(`Job ${job.id} email sent but post-send operations failed. Manual intervention may be required.`, {
+          jobId: job.id,
+          userId: job.userId,
+          error: reason,
         });
       }
     }
