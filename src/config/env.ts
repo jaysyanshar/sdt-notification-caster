@@ -27,9 +27,6 @@ export function validateEnv(): void {
     throw new Error('PORT must be a positive integer');
   }
 
-  if (!env.DATABASE_URL) {
-    throw new Error('DATABASE_URL must be provided');
-  }
 
   if (Number.isNaN(env.WORKER_BATCH_SIZE) || env.WORKER_BATCH_SIZE <= 0) {
     throw new Error('WORKER_BATCH_SIZE must be a positive integer');
