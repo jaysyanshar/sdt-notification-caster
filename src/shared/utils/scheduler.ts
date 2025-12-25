@@ -14,9 +14,15 @@ const TARGET_HOUR = 9;
 
 export function isValidIanaZone(zone: string): boolean {
   if (!zone || typeof zone !== 'string') return false;
-  if (!zone.includes('/')) return false; // avoid raw offsets like +07:00
-  const dt = DateTime.now().setZone(zone);
-  return dt.isValid;
+
+  // Reject pure numeric offset formats like +07:00, -0300, +02
+  // while still allowing valid IANA identifiers such as "UTC" or "GMT".
+  if (/^[+-]\d{2}(?::?\d{2})?$/.test(zone)) return false;
+
+  // Use Luxon to verify this is a known valid zone.
+  if (!DateTime.isValidZone(zone)) return false;
+
+  return true;
 }
 
 export function parseBirthDate(value: string): DateTime {

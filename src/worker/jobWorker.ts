@@ -36,9 +36,8 @@ export class JobWorker {
 
   async runOnce(): Promise<number> {
     const jobs = await this.jobService.claimDueJobs(env.WORKER_BATCH_SIZE);
-    for (const job of jobs) {
-      await this.processJob(job);
-    }
+    // Process all claimed jobs in parallel; WORKER_BATCH_SIZE bounds concurrency.
+    await Promise.all(jobs.map((job) => this.processJob(job)));
     return jobs.length;
   }
 
