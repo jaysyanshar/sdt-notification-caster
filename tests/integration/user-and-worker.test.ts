@@ -136,13 +136,20 @@ describe('Worker processing', () => {
       },
     });
 
-    const scope = nock(emailServiceHost).post('/send-email').reply(200, { success: true });
+    let requestCount = 0;
+    const scope = nock(emailServiceHost)
+      .post('/send-email')
+      .times(2)
+      .reply(200, function () {
+        requestCount++;
+        return { success: true };
+      });
 
     const workerA = new JobWorker(prisma);
     const workerB = new JobWorker(prisma);
 
     const [countA, countB] = await Promise.all([workerA.runOnce(), workerB.runOnce()]);
     expect(countA + countB).toBe(1);
-    expect(scope.isDone()).toBe(true);
+    expect(requestCount).toBe(1);
   });
 });
