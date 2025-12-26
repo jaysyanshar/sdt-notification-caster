@@ -78,7 +78,9 @@ export class JobWorker {
     }
     
     // Resolve the shutdown promise when the loop exits
-    this.shutdownResolve();
+    if (this.shutdownResolve) {
+      this.shutdownResolve();
+    }
     this.shutdownResolve = null;
     this.shutdownPromise = null;
   }

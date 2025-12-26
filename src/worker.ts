@@ -6,6 +6,8 @@ validateEnv();
 
 const worker = new JobWorker();
 
+let isShuttingDown = false;
+
 logger.info('Starting worker.');
 
 worker
@@ -16,6 +18,11 @@ worker
   });
 
 async function gracefulShutdown(signal: string): Promise<void> {
+  if (isShuttingDown) {
+    return;
+  }
+  isShuttingDown = true;
+  
   try {
     logger.info(`${signal} received. Stopping worker.`);
     worker.stop();
