@@ -25,8 +25,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
   
   try {
     logger.info(`${signal} received. Stopping worker.`);
-    worker.stop();
-    await worker.waitForShutdown();
+    await worker.stop();
     logger.info('Worker stopped gracefully.');
     process.exit(0);
   } catch (error) {

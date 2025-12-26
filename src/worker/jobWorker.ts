@@ -98,15 +98,13 @@ export class JobWorker {
     this.cleanupShutdownPromise();
   }
 
-  stop(): void {
-    this.isRunning = false;
-  }
-
   /**
-   * Wait for the worker to gracefully shut down.
-   * This should be called after stop() to ensure the current iteration completes.
+   * Stop the worker and wait for graceful shutdown.
+   * This ensures the current iteration completes before returning.
    */
-  async waitForShutdown(): Promise<void> {
+  async stop(): Promise<void> {
+    this.isRunning = false;
+    
     if (!this.shutdownPromise) {
       // Worker hasn't started or has already shut down
       return;
