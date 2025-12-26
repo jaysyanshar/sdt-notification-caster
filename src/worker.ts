@@ -36,9 +36,15 @@ async function gracefulShutdown(signal: string): Promise<void> {
 }
 
 process.on('SIGINT', () => {
-  void gracefulShutdown('SIGINT');
+  gracefulShutdown('SIGINT').catch((err) => {
+    logger.error('Unexpected error during SIGINT shutdown', err);
+    process.exit(1);
+  });
 });
 
 process.on('SIGTERM', () => {
-  void gracefulShutdown('SIGTERM');
+  gracefulShutdown('SIGTERM').catch((err) => {
+    logger.error('Unexpected error during SIGTERM shutdown', err);
+    process.exit(1);
+  });
 });

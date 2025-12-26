@@ -26,11 +26,12 @@ export class JobWorker {
   }
 
   private cleanupShutdownPromise(): void {
-    if (this.shutdownResolve) {
-      this.shutdownResolve();
-    }
+    const resolve = this.shutdownResolve;
     this.shutdownResolve = null;
     this.shutdownPromise = null;
+    if (resolve) {
+      resolve();
+    }
   }
 
   async processJob(job: MessageJobWithUser): Promise<void> {
@@ -75,7 +76,7 @@ export class JobWorker {
 
   async start(): Promise<void> {
     if (this.isRunning) {
-      throw new Error('Worker is already running. Call stop() and waitForShutdown() first to restart the worker.');
+      throw new Error('Worker is already running. Stop the worker before starting again.');
     }
     
     this.isRunning = true;
