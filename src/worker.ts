@@ -15,18 +15,23 @@ worker
     process.exit(1);
   });
 
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received. Stopping worker.');
-  worker.stop();
-  await worker.waitForShutdown();
-  logger.info('Worker stopped gracefully.');
-  process.exit(0);
+async function gracefulShutdown(signal: string): Promise<void> {
+  try {
+    logger.info(`${signal} received. Stopping worker.`);
+    worker.stop();
+    await worker.waitForShutdown();
+    logger.info('Worker stopped gracefully.');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during graceful shutdown', error);
+    process.exit(1);
+  }
+}
+
+process.on('SIGINT', () => {
+  gracefulShutdown('SIGINT');
 });
 
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received. Stopping worker.');
-  worker.stop();
-  await worker.waitForShutdown();
-  logger.info('Worker stopped gracefully.');
-  process.exit(0);
+process.on('SIGTERM', () => {
+  gracefulShutdown('SIGTERM');
 });

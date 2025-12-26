@@ -60,6 +60,10 @@ export class JobWorker {
   }
 
   async start(): Promise<void> {
+    if (this.isRunning) {
+      throw new Error('Worker is already running');
+    }
+    
     this.isRunning = true;
     // Create a new shutdown promise each time start is called
     this.shutdownPromise = new Promise((resolve) => {
@@ -74,11 +78,9 @@ export class JobWorker {
     }
     
     // Resolve the shutdown promise when the loop exits
-    if (this.shutdownResolve) {
-      this.shutdownResolve();
-      this.shutdownResolve = null;
-      this.shutdownPromise = null;
-    }
+    this.shutdownResolve();
+    this.shutdownResolve = null;
+    this.shutdownPromise = null;
   }
 
   stop(): void {
