@@ -75,10 +75,10 @@ export class MessageJobService {
         return [];
       }
 
-      const ids = rows.map((row: MessageJobWithUser) => row.id);
+      const ids = rows.map((row) => row.id);
       await tx.$executeRaw`UPDATE "MessageJob" SET status = 'SENDING', "updatedAt" = NOW() WHERE id IN (${Prisma.join(ids)})`;
 
-      return rows.map((row: MessageJobWithUser) => ({ ...row, user: (row as any).user as User }));
+      return rows.map((row) => ({ ...row, user: (row as any).user as User }));
     }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }
 
