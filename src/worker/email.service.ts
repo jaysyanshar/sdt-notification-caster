@@ -34,7 +34,7 @@ export class EmailService {
         // Treat 4xx client errors as permanent failures that should not be retried.
         if (status !== undefined && status >= 400 && status < 500 && status !== 408) {
           // Optionally log or record the permanent failure here.
-          return;
+          throw error;
         }
       }
 
