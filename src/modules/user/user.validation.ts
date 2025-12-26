@@ -20,8 +20,11 @@ export const userSchema = z.object({
         }
       },
       (value) => {
+        // This is only called when validation fails, so we can safely call parseBirthDate
+        // to get the specific error message
         try {
           parseBirthDate(value);
+          // Should not reach here since validation already failed, but return fallback
           return { message: 'Invalid birthDate' };
         } catch (err: any) {
           return { message: err?.message ?? 'Invalid birthDate' };
