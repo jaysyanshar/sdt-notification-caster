@@ -30,7 +30,6 @@ export class MessageJobService {
         userId: user.id,
         type: MessageType.BIRTHDAY,
         status: { in: [MessageStatus.PENDING, MessageStatus.RETRY] },
-        scheduledAtUtc: { gt: new Date() },
       },
     });
 
