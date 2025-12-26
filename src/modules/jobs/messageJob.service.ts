@@ -11,7 +11,21 @@ type DbClient = PrismaClient | Prisma.TransactionClient;
 export class MessageJobService {
   constructor(private prisma: DbClient) {}
 
+  // pg row_to_json returns dates/timestamps as strings; normalize for scheduler usage.
+  private normalizeUserDates(user: User): User {
+    const birthDate: any = (user as any).birthDate;
+    if (birthDate instanceof Date) {
+      return user;
+    }
+    // If it's a string (e.g., '1990-05-02'), convert to Date.
+    if (typeof birthDate === 'string') {
+      return { ...user, birthDate: new Date(birthDate) } as User;
+    }
+    return user;
+  }
+
   async scheduleNextBirthday(user: User, now: DateTime = DateTime.utc()): Promise<MessageJob> {
+    user = this.normalizeUserDates(user);
     const scheduledAt = calculateNextBirthdayUtc(user.birthDate.toISOString().slice(0, 10), user.timezone, now).toJSDate();
     return this.prisma.messageJob.create({
       data: {
@@ -25,6 +39,7 @@ export class MessageJobService {
   }
 
   async rescheduleBirthday(user: User, now: DateTime = DateTime.utc()): Promise<MessageJob> {
+    user = this.normalizeUserDates(user);
     await this.prisma.messageJob.deleteMany({
       where: {
         userId: user.id,
@@ -71,8 +86,15 @@ export class MessageJobService {
         return [];
       }
 
-      const ids = rows.map((row: { id: string; }) => row.id);
-      await tx.$executeRaw`UPDATE "MessageJob" SET status = 'SENDING', "updatedAt" = NOW() WHERE id IN (${Prisma.join(ids)})`;
+      const ids = rows.map((row: { id: string }) => row.id);
+      // Prisma.join produces SQL text literals; cast them to uuid to match the id column type.
+      await tx.$executeRaw`
+        UPDATE "MessageJob"
+        SET status = 'SENDING', "updatedAt" = NOW()
+        WHERE id IN (
+          SELECT UNNEST(ARRAY[${Prisma.join(ids)}]::uuid[])
+        )
+      `;
 
       return rows.map((row: any) => ({ ...row, user: (row as any).user as User }));
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -98,7 +120,8 @@ export class MessageJobService {
   }
 
   async scheduleNextForJob(job: MessageJobWithUser): Promise<MessageJob> {
-    const scheduledAtUtc = getNextScheduleForType(MessageType.BIRTHDAY, job.user);
+    const normalizedUser = this.normalizeUserDates(job.user);
+    const scheduledAtUtc = getNextScheduleForType(MessageType.BIRTHDAY, normalizedUser);
     return this.prisma.messageJob.create({
       data: {
         userId: job.userId,

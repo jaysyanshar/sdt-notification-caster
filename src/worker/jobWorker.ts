@@ -90,6 +90,7 @@ export class JobWorker {
     
     while (this.isRunning) {
       const processed = await this.runOnce();
+      logger.info(`Processed ${processed} jobs at ${(() => { const d = new Date(); const p = (n: number) => n.toString().padStart(2, '0'); return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} GMT`; })()}`);
       if (processed === 0) {
         await new Promise((resolve) => setTimeout(resolve, env.WORKER_IDLE_MS));
       }
