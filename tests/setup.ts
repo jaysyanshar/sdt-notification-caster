@@ -1,51 +1,22 @@
-import fs from 'fs';
-import path from 'path';
-import { randomUUID } from 'crypto';
-import { newDb } from 'pg-mem';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
-import { setPrismaClient } from '../src/shared/prisma/client';
+// Unit-test bootstrap only.
+// IMPORTANT: unit tests must not require a database. Any DB access should be mocked.
 
-process.env.DATABASE_URL = 'postgresql://user:password@localhost:5432/test';
-process.env.EMAIL_SERVICE_URL = 'https://email-service.digitalenvision.com.au';
-process.env.EMAIL_SERVICE_ENDPOINT = '/send-email';
-process.env.EMAIL_TIMEOUT_MS = '2000';
-process.env.WORKER_BATCH_SIZE = '5';
-process.env.WORKER_IDLE_MS = '0';
-process.env.PORT = '3000';
-process.env.LOG_LEVEL = 'error';
+// Keep timezone deterministic across OSes.
+process.env.TZ = process.env.TZ || 'UTC';
 
-const db = newDb({ autoCreateForeignKeyIndices: true });
-db.public.registerFunction({ name: 'gen_random_uuid', returns: 'uuid', implementation: randomUUID });
+// Default envs used across modules.
+process.env.EMAIL_SERVICE_URL = process.env.EMAIL_SERVICE_URL || 'https://email-service.digitalenvision.com.au';
+process.env.EMAIL_SERVICE_ENDPOINT = process.env.EMAIL_SERVICE_ENDPOINT || '/send-email';
+process.env.EMAIL_TIMEOUT_MS = process.env.EMAIL_TIMEOUT_MS || '2000';
+process.env.WORKER_BATCH_SIZE = process.env.WORKER_BATCH_SIZE || '5';
+process.env.WORKER_IDLE_MS = process.env.WORKER_IDLE_MS || '0';
+process.env.PORT = process.env.PORT || '3000';
+process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'error';
 
-const pg = db.adapters.createPg();
-const pool = new pg.Pool();
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
-beforeAll(async () => {
-  const migrationsDir = path.join(__dirname, '../prisma/migrations');
-  if (fs.existsSync(migrationsDir)) {
-    const folders = fs.readdirSync(migrationsDir).sort();
-    for (const folder of folders) {
-      const migrationPath = path.join(migrationsDir, folder, 'migration.sql');
-      if (fs.existsSync(migrationPath)) {
-        const sql = fs.readFileSync(migrationPath, 'utf8');
-        await db.public.none(sql);
-      }
-    }
-  }
-
-  setPrismaClient(prisma);
+beforeEach(() => {
+  // Ensure HTTP mocks don't leak across unit tests.
+  jest.resetModules();
+  jest.clearAllMocks();
 });
 
-afterAll(async () => {
-  await prisma.$disconnect();
-});
-
-beforeEach(async () => {
-  await prisma.messageJob.deleteMany();
-  await prisma.user.deleteMany();
-});
-
-export { prisma };
+export {};

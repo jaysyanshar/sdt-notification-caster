@@ -7,7 +7,8 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.isOperational = isOperational;
 
-    Object.setPrototypeOf(this, AppError.prototype);
+    // Preserve correct `instanceof` behavior for subclasses.
+    Object.setPrototypeOf(this, new.target.prototype);
     Error.captureStackTrace(this, this.constructor);
   }
 }

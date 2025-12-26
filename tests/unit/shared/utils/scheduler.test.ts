@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { calculateNextBirthdayUtc, isValidIanaZone } from '../../src/shared/utils/scheduler';
+import { calculateNextBirthdayUtc, isValidIanaZone } from '../../../../src/shared/utils/scheduler';
 
 describe('calculateNextBirthdayUtc', () => {
   it('schedules at 09:00 local time for different zones', () => {

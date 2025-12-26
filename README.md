@@ -99,10 +99,15 @@ curl -X DELETE http://localhost:3000/api/user/<userId>
 - `birthDate`: ISO date `YYYY-MM-DD`.
 - `email`: standard email address.
 
-## Tests
-Run all tests (unit + integration):
+## Testing
+
+This repo's Jest configuration is **unit-test only**.
+
+- Unit tests live under `tests/unit/**` and must not depend on a database.
+- Database-backed tests (Prisma/pg-mem) are intentionally excluded to keep unit tests fast and deterministic.
+
+Run tests:
+
 ```bash
 npm test
 ```
-
-Tests include scheduling calculations, API flows, worker success/failure, and concurrency protections for duplicate sends.

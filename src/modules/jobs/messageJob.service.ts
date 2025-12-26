@@ -50,11 +50,10 @@ export class MessageJobService {
     });
   }
 
-  async deleteUserJobs(userId: string): Promise<void> {
-    await this.prisma.messageJob.deleteMany({ where: { userId } });
-  }
-
   async claimDueJobs(limit: number): Promise<MessageJobWithUser[]> {
+    if (!(this.prisma instanceof PrismaClient)) {
+      throw new Error('claimDueJobs must be called with a PrismaClient instance');
+    }
     return this.prisma.$transaction(async (tx) => {
       const rows = await tx.$queryRaw<MessageJobWithUser[]>`
         SELECT mj.*, row_to_json(u) as user
@@ -72,10 +71,10 @@ export class MessageJobService {
         return [];
       }
 
-      const ids = rows.map((row) => row.id);
+      const ids = rows.map((row: { id: string; }) => row.id);
       await tx.$executeRaw`UPDATE "MessageJob" SET status = 'SENDING', "updatedAt" = NOW() WHERE id IN (${Prisma.join(ids)})`;
 
-      return rows.map((row) => ({ ...row, user: (row as any).user as User }));
+      return rows.map((row: any) => ({ ...row, user: (row as any).user as User }));
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   }
 
