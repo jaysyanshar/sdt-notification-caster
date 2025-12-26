@@ -10,14 +10,24 @@ export const userSchema = z.object({
   birthDate: z
     .string()
     .regex(isoDateRegex, 'birthDate must be in YYYY-MM-DD format')
-    .refine((value) => {
-      try {
-        parseBirthDate(value);
-        return true;
-      } catch (err) {
-        return false;
-      }
-    }, 'Invalid birthDate'),
+    .refine(
+      (value) => {
+        try {
+          parseBirthDate(value);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      },
+      (value) => {
+        try {
+          parseBirthDate(value);
+          return { message: 'Invalid birthDate' };
+        } catch (err: any) {
+          return { message: err?.message ?? 'Invalid birthDate' };
+        }
+      },
+    ),
   timezone: z.string().superRefine((value, ctx) => {
     // Disallow offset-style timezones like "+07:00" and provide a clear message.
     const offsetPattern = /^[+-]\d{2}:\d{2}$/;

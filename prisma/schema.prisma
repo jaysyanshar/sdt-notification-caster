@@ -35,7 +35,7 @@ model User {
 
 model MessageJob {
   id               String        @id @default(uuid()) @db.Uuid
-  userId           String        @db.Uuid
+  userId           String?       @db.Uuid
   type             MessageType
   scheduledAtUtc   DateTime
   status           MessageStatus
@@ -46,8 +46,12 @@ model MessageJob {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
   @@index([status, scheduledAtUtc, nextAttemptAtUtc])
+  // Unique constraint prevents duplicate jobs for same user/type/time
+  // Note: Uses millisecond precision. Rapid creates/updates could cause constraint violations
+  // if jobs are created at the exact same UTC millisecond. The application should handle
+  // this gracefully by checking for existing jobs first or catching the violation.
   @@unique([userId, type, scheduledAtUtc])
 }

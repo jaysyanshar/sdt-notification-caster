@@ -81,6 +81,21 @@ export function buildBirthdayMessage(user: UserLike): string {
   return `Hey, ${user.firstName} ${user.lastName}, it's your birthday`;
 }
 
+/**
+ * Calculate the next retry attempt time using exponential backoff with jitter.
+ * 
+ * Retry schedule:
+ * - Attempt 0 (1st retry): ~1 second (2^0 = 1s base + jitter)
+ * - Attempt 1 (2nd retry): ~2 seconds (2^1 = 2s base + jitter)
+ * - Attempt 2 (3rd retry): ~4 seconds (2^2 = 4s base + jitter)
+ * - Attempt 3 (4th retry): ~8 seconds (2^3 = 8s base + jitter)
+ * - Maximum: 60 minutes (capped)
+ * 
+ * Jitter is up to 30% of the base delay to prevent thundering herd.
+ * 
+ * @param attempts - Number of previous attempts (0-indexed)
+ * @returns Date object representing when the next retry should occur
+ */
 export function calculateNextAttempt(attempts: number): Date {
   const baseDelayMs = 1000 * Math.pow(2, attempts); // exponential backoff
   const cappedBase = Math.min(baseDelayMs, 60 * 60 * 1000);

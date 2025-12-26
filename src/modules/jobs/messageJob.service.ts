@@ -55,7 +55,10 @@ export class MessageJobService {
   }
 
   async claimDueJobs(limit: number): Promise<MessageJobWithUser[]> {
-    return this.prisma.$transaction(async (tx) => {
+    if (!('$transaction' in this.prisma)) {
+      throw new Error('claimDueJobs requires PrismaClient, not TransactionClient');
+    }
+    return (this.prisma as PrismaClient).$transaction(async (tx: Prisma.TransactionClient) => {
       const rows = await tx.$queryRaw<MessageJobWithUser[]>`
         SELECT mj.*, row_to_json(u) as user
         FROM "MessageJob" mj
@@ -72,11 +75,11 @@ export class MessageJobService {
         return [];
       }
 
-      const ids = rows.map((row) => row.id);
+      const ids = rows.map((row: MessageJobWithUser) => row.id);
       await tx.$executeRaw`UPDATE "MessageJob" SET status = 'SENDING', "updatedAt" = NOW() WHERE id IN (${Prisma.join(ids)})`;
 
-      return rows.map((row) => ({ ...row, user: (row as any).user as User }));
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      return rows.map((row: MessageJobWithUser) => ({ ...row, user: (row as any).user as User }));
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
   }
 
   async markSent(jobId: string): Promise<void> {

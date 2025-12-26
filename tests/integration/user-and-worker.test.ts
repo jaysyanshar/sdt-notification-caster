@@ -90,8 +90,13 @@ describe('Worker processing', () => {
 
     const nextJobs = await prisma.messageJob.findMany({ where: { userId: user.id, status: MessageStatus.PENDING } });
     expect(nextJobs).toHaveLength(1);
-    const nextSchedule = DateTime.fromJSDate(nextJobs[0].scheduledAtUtc);
-    expect(nextSchedule.year).toBeGreaterThanOrEqual(DateTime.utc().year);
+    const nextSchedule = DateTime.fromJSDate(nextJobs[0].scheduledAtUtc).setZone(user.timezone);
+    const now = DateTime.now().setZone(user.timezone);
+    // Next birthday should be in the future
+    expect(nextSchedule > now).toBe(true);
+    // Next birthday should be on the user's birth month and day
+    expect(nextSchedule.month).toBe(5);
+    expect(nextSchedule.day).toBe(2);
   });
 
   it('marks job for retry on failure', async () => {
@@ -137,9 +142,9 @@ describe('Worker processing', () => {
     });
 
     let requestCount = 0;
-    const scope = nock(emailServiceHost)
+    nock(emailServiceHost)
       .post('/send-email')
-      .times(2)
+      .times(1)
       .reply(200, function () {
         requestCount++;
         return { success: true };

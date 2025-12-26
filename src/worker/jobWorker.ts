@@ -60,8 +60,11 @@ export class JobWorker {
         await this.jobService.markRetry(job.id, job.attempts, reason);
         logger.warn(`Job ${job.id} failed. Scheduled for retry.`, { reason });
       } else {
-        // Email was sent but post-send operations failed
+        // Email was sent but post-send operations failed (marking sent + scheduling next)
         // DO NOT retry as it would send duplicate email
+        // LIMITATION: Job remains in SENDING status and next year's birthday won't be scheduled
+        // automatically. Consider implementing a separate recovery mechanism or dead letter queue
+        // for jobs stuck in SENDING status to ensure next year's birthday gets scheduled.
         logger.error(`Job ${job.id} email sent but post-send operations failed. Manual intervention may be required.`, {
           jobId: job.id,
           userId: job.userId,
@@ -74,7 +77,8 @@ export class JobWorker {
   async runOnce(): Promise<number> {
     const jobs = await this.jobService.claimDueJobs(env.WORKER_BATCH_SIZE);
     // Process all claimed jobs in parallel; WORKER_BATCH_SIZE bounds concurrency.
-    await Promise.all(jobs.map((job) => this.processJob(job)));
+    // Use Promise.allSettled to ensure all jobs are processed independently.
+    await Promise.allSettled(jobs.map((job) => this.processJob(job)));
     return jobs.length;
   }
 
