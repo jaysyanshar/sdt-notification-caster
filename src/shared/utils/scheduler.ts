@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon';
+import { DateTime, IANAZone } from 'luxon';
 import { MessageType } from '@prisma/client';
 
 export interface UserLike {
@@ -20,7 +20,7 @@ export function isValidIanaZone(zone: string): boolean {
   if (/^[+-]\d{2}(?::?\d{2})?$/.test(zone)) return false;
 
   // Use Luxon to verify this is a known valid zone.
-  if (!DateTime.isValidZone(zone)) return false;
+  if (!IANAZone.isValidZone(zone)) return false;
   const dt = DateTime.now().setZone(zone);
   return dt.isValid;
 }

@@ -33,4 +33,9 @@ describe('timezone validation', () => {
     expect(isValidIanaZone('Invalid/Zone')).toBe(false);
     expect(isValidIanaZone('+07:00')).toBe(false);
   });
+
+  it('accepts valid IANA zones', () => {
+    expect(isValidIanaZone('America/New_York')).toBe(true);
+    expect(isValidIanaZone('Asia/Jakarta')).toBe(true);
+  });
 });
