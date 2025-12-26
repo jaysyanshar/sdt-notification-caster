@@ -54,6 +54,14 @@ All configuration is read from the environment. Key values:
 ## API
 Base path: `/api/user`
 
+## API Documentation (Swagger / OpenAPI)
+When the server is running, you can access:
+
+- Swagger UI: `http://localhost:3000/api-docs`
+- OpenAPI JSON: `http://localhost:3000/openapi.json`
+
+(If you changed `PORT`, replace `3000` accordingly.)
+
 ### Create user
 ```bash
 curl -X POST http://localhost:3000/api/user \
