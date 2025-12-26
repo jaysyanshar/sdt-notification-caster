@@ -77,6 +77,7 @@ export class JobWorker {
     if (this.shutdownResolve) {
       this.shutdownResolve();
       this.shutdownResolve = null;
+      this.shutdownPromise = null;
     }
   }
 
@@ -89,8 +90,10 @@ export class JobWorker {
    * This should be called after stop() to ensure the current iteration completes.
    */
   async waitForShutdown(): Promise<void> {
-    if (this.shutdownPromise) {
-      await this.shutdownPromise;
+    if (!this.shutdownPromise) {
+      // Worker hasn't started or has already shut down
+      return;
     }
+    await this.shutdownPromise;
   }
 }
