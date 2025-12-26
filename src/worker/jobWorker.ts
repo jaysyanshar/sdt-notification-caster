@@ -28,10 +28,10 @@ export class JobWorker {
   private cleanupShutdownPromise(): void {
     // Capture the resolve function before nullifying references
     const resolve = this.shutdownResolve;
-    // Nullify references first to prevent new waitForShutdown() calls from waiting
+    // Nullify references first to prevent new stop() calls from waiting
     this.shutdownResolve = null;
     this.shutdownPromise = null;
-    // Resolve the promise after nullifying to ensure waitForShutdown() doesn't wait on a null promise
+    // Resolve the promise after nullifying to ensure stop() doesn't wait on a null promise
     // Note: In Node.js single-threaded event loop, there's no race condition here
     if (resolve) {
       resolve();
@@ -104,7 +104,7 @@ export class JobWorker {
    */
   async stop(): Promise<void> {
     this.isRunning = false;
-    
+
     if (!this.shutdownPromise) {
       // Worker hasn't started or has already shut down
       return;
