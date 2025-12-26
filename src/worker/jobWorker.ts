@@ -19,6 +19,12 @@ export class JobWorker {
     this.emailService = new EmailService();
   }
 
+  private createShutdownPromise(): void {
+    this.shutdownPromise = new Promise((resolve) => {
+      this.shutdownResolve = resolve;
+    });
+  }
+
   async processJob(job: MessageJobWithUser): Promise<void> {
     const message = this.jobService.buildMessage(job);
     let emailSent = false;
@@ -65,10 +71,7 @@ export class JobWorker {
     }
     
     this.isRunning = true;
-    // Create a new shutdown promise each time start is called
-    this.shutdownPromise = new Promise((resolve) => {
-      this.shutdownResolve = resolve;
-    });
+    this.createShutdownPromise();
     
     while (this.isRunning) {
       const processed = await this.runOnce();

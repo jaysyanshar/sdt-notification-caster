@@ -36,9 +36,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
 }
 
 process.on('SIGINT', () => {
-  gracefulShutdown('SIGINT');
+  void gracefulShutdown('SIGINT');
 });
 
 process.on('SIGTERM', () => {
-  gracefulShutdown('SIGTERM');
+  void gracefulShutdown('SIGTERM');
 });
