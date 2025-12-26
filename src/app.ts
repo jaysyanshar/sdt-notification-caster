@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import { errorHandler, notFoundHandler } from './shared/errors/errorHandler';
 import { requestLogger, bodyParser } from './shared/middleware';
-import placeholderRoutes from './modules/placeholder/placeholder.routes';
+import userRoutes from './modules/user/user.routes';
 
 export function createApp(): Express {
   const app = express();
@@ -11,7 +11,7 @@ export function createApp(): Express {
   app.use(requestLogger);
 
   // Routes
-  app.use('/api/placeholder', placeholderRoutes);
+  app.use('/api/user', userRoutes);
 
   // Error handling
   app.use(notFoundHandler);

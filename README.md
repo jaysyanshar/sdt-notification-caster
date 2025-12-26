@@ -1,125 +1,108 @@
-# sdt-notification-caster
-A demo notification caster project built in TypeScript with a layered architecture.
+# Notification Caster
 
-## Features
-- TypeScript-based Express.js server
-- Layered architecture (controller, service, repository pattern)
-- Environment configuration management
-- Structured error handling
-- Logging system
-- Graceful shutdown
-- REST API endpoint: `/api/placeholder/hello-world`
-
-## Project Structure
-
-```
-src/
-  app.ts                # Express app setup (middlewares, routes)
-  server.ts             # Server entry point with graceful shutdown
-  config/
-    env.ts              # Environment variable parsing and validation
-    index.ts
-  shared/
-    logger/
-      index.ts          # Logging utility
-    errors/
-      AppError.ts       # Custom error classes
-      errorHandler.ts   # Express error middleware
-    middleware/         # Shared middleware (auth, validation, etc.)
-    utils/              # Utility functions
-    types/              # Shared TypeScript types
-  modules/
-    placeholder/
-      placeholder.routes.ts      # Route definitions
-      placeholder.controller.ts  # Request handlers
-      placeholder.service.ts     # Business logic
-tests/
-  unit/                 # Unit tests for individual components
-    modules/            # Module-level tests
-    shared/             # Shared utilities tests
-```
+A TypeScript + Express.js service that manages users and automatically sends birthday greetings at 09:00 in each user's local timezone. Jobs are persisted in PostgreSQL via Prisma, retried with exponential backoff, and processed by a lightweight worker loop.
 
 ## Prerequisites
-- Node.js (v14 or higher)
+- Node.js 20+
 - npm
+- PostgreSQL database (empty schema is fine)
 
-## Installation
-
-```bash
-npm install
-```
+## Setup
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Copy environment template and customize values:
+   ```bash
+   cp .env.example .env
+   ```
+3. Generate Prisma client:
+   ```bash
+   npm run prisma:generate
+   ```
+4. Apply migrations to your database:
+   ```bash
+   npm run prisma:migrate
+   ```
 
 ## Environment Variables
+All configuration is read from the environment. Key values:
+- `DATABASE_URL` (required): PostgreSQL connection string.
+- `PORT` (default `3000`): API port.
+- `LOG_LEVEL` (default `info`).
+- `WORKER_BATCH_SIZE` (default `10`): number of jobs claimed per poll.
+- `WORKER_IDLE_MS` (default `30000`): idle sleep when no jobs are due.
+- `EMAIL_SERVICE_URL` (default `https://email-service.digitalenvision.com.au`).
+- `EMAIL_SERVICE_ENDPOINT` (default `/send-email`).
+- `EMAIL_TIMEOUT_MS` (default `5000`).
 
-Create a `.env` file in the root directory (optional):
+## Running
+- API (development):
+  ```bash
+  npm run dev
+  ```
+- API (production build):
+  ```bash
+  npm run build
+  npm start
+  ```
+- Worker:
+  ```bash
+  npm run worker
+  ```
 
-```env
-NODE_ENV=development
-PORT=3000
-LOG_LEVEL=info
-```
+## API
+Base path: `/api/user`
 
-## Build
-
+### Create user
 ```bash
-npm run build
+curl -X POST http://localhost:3000/api/user \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "birthDate": "1990-05-02",
+    "timezone": "Asia/Jakarta"
+  }'
 ```
 
-## Run
-
-### Development mode (with ts-node)
+### Update user
 ```bash
-npm run dev
+curl -X PUT http://localhost:3000/api/user/<userId> \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "birthDate": "1990-05-02",
+    "timezone": "America/New_York"
+  }'
 ```
 
-### Production mode
+### Delete user
 ```bash
-npm run build
-npm start
+curl -X DELETE http://localhost:3000/api/user/<userId>
 ```
 
-## Testing
+## Scheduling & Delivery
+- Birthdays are scheduled for **09:00 local time** in the provided IANA timezone. The timestamp is converted to UTC and stored as a job.
+- If the current day/time is already past 09:00 locally, the next year is scheduled.
+- **Feb 29 birthdays** are delivered on Feb 28 in non-leap years.
+- Each job is unique per user/type/scheduledAtUtc (database constraint) to prevent duplicates.
+- The worker polls for due jobs, claims them with `FOR UPDATE SKIP LOCKED`, and sends email payloads as `{ "email": "<user email>", "message": "Hey, <first> <last>, it's your birthday" }` with an `Idempotency-Key` header equal to the job id.
+- Failures/timeouts set the job to `RETRY` with exponential backoff + jitter (capped at 1 hour) stored in `nextAttemptAtUtc`.
+- After a successful send, the next year's birthday job is scheduled automatically.
 
-### Run all tests
+## Formats
+- `timezone`: IANA zone string (e.g., `Asia/Jakarta`, `America/New_York`, `Australia/Melbourne`).
+- `birthDate`: ISO date `YYYY-MM-DD`.
+- `email`: standard email address.
+
+## Tests
+Run all tests (unit + integration):
 ```bash
 npm test
 ```
 
-### Run tests in watch mode
-```bash
-npm run test:watch
-```
-
-### Run tests with coverage
-```bash
-npm run test:coverage
-```
-
-The project includes unit tests for:
-- **Controllers**: Request handling and error propagation
-- **Services**: Business logic and data processing
-- **Utilities**: HTTP response formatting and helper functions
-
-## API Endpoints
-
-### GET /api/placeholder/hello-world
-Returns a "Hello World" message with HTTP 200 status.
-
-**Response:**
-```json
-{
-  "code": "SUCCESS",
-  "message": "Hello World retrieved successfully",
-  "data": "Hello World",
-  "serverTime": "2025-12-24T09:28:15.119Z"
-}
-```
-
-## Error Handling
-
-The application includes centralized error handling:
-- Custom error classes (AppError, NotFoundError, BadRequestError, etc.)
-- Structured error responses
-- 404 handler for undefined routes
-- Global error handler for unexpected errors
-
+Tests include scheduling calculations, API flows, worker success/failure, and concurrency protections for duplicate sends.
