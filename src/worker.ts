@@ -15,12 +15,18 @@ worker
     process.exit(1);
   });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received. Stopping worker.');
   worker.stop();
+  await worker.waitForShutdown();
+  logger.info('Worker stopped gracefully.');
+  process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received. Stopping worker.');
   worker.stop();
+  await worker.waitForShutdown();
+  logger.info('Worker stopped gracefully.');
+  process.exit(0);
 });

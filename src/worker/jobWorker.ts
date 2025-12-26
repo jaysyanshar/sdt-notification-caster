@@ -10,6 +10,8 @@ export class JobWorker {
   private jobService: MessageJobService;
   private emailService: EmailService;
   private isRunning = false;
+  private shutdownPromise: Promise<void> | null = null;
+  private shutdownResolve: (() => void) | null = null;
 
   constructor(prismaClient: PrismaClient = getPrismaClient()) {
     this.prisma = prismaClient;
@@ -59,15 +61,36 @@ export class JobWorker {
 
   async start(): Promise<void> {
     this.isRunning = true;
+    // Create a new shutdown promise each time start is called
+    this.shutdownPromise = new Promise((resolve) => {
+      this.shutdownResolve = resolve;
+    });
+    
     while (this.isRunning) {
       const processed = await this.runOnce();
       if (processed === 0) {
         await new Promise((resolve) => setTimeout(resolve, env.WORKER_IDLE_MS));
       }
     }
+    
+    // Resolve the shutdown promise when the loop exits
+    if (this.shutdownResolve) {
+      this.shutdownResolve();
+      this.shutdownResolve = null;
+    }
   }
 
   stop(): void {
     this.isRunning = false;
+  }
+
+  /**
+   * Wait for the worker to gracefully shut down.
+   * This should be called after stop() to ensure the current iteration completes.
+   */
+  async waitForShutdown(): Promise<void> {
+    if (this.shutdownPromise) {
+      await this.shutdownPromise;
+    }
   }
 }
